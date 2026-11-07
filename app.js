@@ -77,7 +77,7 @@ const ROLES = ['Administrador Praxis','Supervisor / ITO','Encargado de Calidad',
 let CURRENT_ROLE = localStorage.getItem('obracontrol_role') || 'Supervisor / ITO';
 const USER_KEY = 'obracontrol_users_v1';
 const SESSION_KEY = 'obracontrol_session_v1';
-const USER_ROLES = ['Trabajador de obra','Trabajador común','Administrador','Supervisor','Jefe de obra','Gerente de obra','Gerente de proyecto'];
+const USER_ROLES = ['Trabajador de obra','Trabajador común','Administrador','Supervisor','Jefe de obra','Jefe de terreno','Jefe de oficina técnica','Encargado de Calidad','Gerente de obra','Gerente de proyecto'];
 const CREW_KEY = 'obracontrol_crews_v1';
 let CREWS = [];
 let GENERATED_WORKER_CREDENTIALS = [];
@@ -462,7 +462,7 @@ function vModoTerreno(){
 
 
 /* ---- Centro de control, alertas, calendario, costos y presentación ---- */
-function roleCanClose(){ return ['Administrador Praxis','Supervisor / ITO','Encargado de Calidad','Jefe de Obra','Gerente de Proyecto'].includes(CURRENT_ROLE); }
+function roleCanClose(){ return ['Administrador Praxis','Supervisor / ITO','Encargado de Calidad','Jefe de Obra','Gerente de Proyecto','Jefe de oficina técnica'].includes(CURRENT_ROLE); }
 function roleBar(){ return `<div class="role-bar"><div><b>👤 Sesión de ${esc(CURRENT_USER?.nombre||'Usuario')}</b><span class="muted small">Perfil: ${esc(CURRENT_USER?.rol||CURRENT_ROLE)} · acceso local de esta instalación.</span></div><span class="user-role-chip">${esc(CURRENT_USER?.rol||CURRENT_ROLE)}</span></div>`; }
 function timelineProjectHTML(p){
   const events=[
@@ -1410,7 +1410,7 @@ const HOLD_CHECKS = [
   ['access','Accesos para colocación y vibrado confirmados'],
   ['safety','Área, accesos, personal y controles de seguridad verificados']
 ];
-function preventCanManage(){return ['Administrador','Supervisor','Jefe de obra','Gerente de obra','Gerente de proyecto'].includes(CURRENT_USER?.rol);}
+function preventCanManage(){return ['Administrador','Supervisor','Jefe de obra','Jefe de terreno','Jefe de oficina técnica','Encargado de Calidad','Gerente de obra','Gerente de proyecto'].includes(CURRENT_USER?.rol);}
 function geoDistanceM(a,b){if(!a||!b)return null;const rad=x=>x*Math.PI/180,R=6371000,dLat=rad(b.lat-a.lat),dLon=rad(b.lon-a.lon),v=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(v)));}
 function preventStats(){return {hold:DB.holdPoints.filter(x=>x.estado!=='Autorizado').length,unsafe:DB.toolChecks.filter(x=>x.estado==='Fuera de servicio').length+(DB.inventoryItems||[]).filter(x=>['Bloqueado','Fuera de servicio'].includes(x.estado)).length,talks:DB.toolboxTalks.length,active:DB.enhancedControls.filter(x=>x.estado!=='Completado').length};}
 function preventTabs(active){return `<div class="tabs prevent-tabs"><a class="tab ${active==='panel'?'active':''}" href="#/prevent">🛡️ Panel</a><a class="tab ${active==='risk'?'active':''}" href="#/prevent/risk">⚠️ Matriz de riesgos</a><a class="tab ${active==='hold'?'active':''}" href="#/prevent/hold">⛔ Puntos de detención</a><a class="tab ${active==='tools'?'active':''}" href="#/prevent/tools">🧰 Inspecciones</a><a class="tab ${active==='inventory'?'active':''}" href="#/prevent/inventory">📦 Inventario</a><a class="tab ${active==='integration'?'active':''}" href="#/prevent/integracion">🔗 Integración</a><a class="tab ${active==='talks'?'active':''}" href="#/prevent/talks">🗣️ Charlas</a><a class="tab ${active==='followup'?'active':''}" href="#/prevent/followup">🔎 Seguimiento</a></div>`;}
@@ -1655,6 +1655,24 @@ function ensureDemoWorkspace(){
     const crew=CREWS.find(c=>c.id==='demo-crew-hormigonado');
     if(crew && (!crew.miembros || crew.miembros.length<5)){crew.miembros=workerIds;changedCrews=true;}
   }
+  const staffUsers=[
+    ['staff-joaquin','joaquin','joaquin','Gerente de proyecto'],
+    ['staff-cristobal','cristobal','cristobal','Jefe de oficina técnica'],
+    ['staff-marcelo','marcelo','marcelo','Encargado de Calidad'],
+    ['staff-juan-jara','Juan Jara','juan.jara','Jefe de terreno'],
+    ['staff-juan-sala','Juan Sala','juan.sala','Administrador']
+  ];
+  for(const [id,nombre,usuario,rol] of staffUsers){
+    let u=AUTH_USERS.find(x=>x.id===id)||AUTH_USERS.find(x=>x.usuario===usuario);
+    if(!u){
+      const salt='OBRA-CONTROL-V14-'+id+'-SALT';
+      u={id,nombre,usuario,rol,salt,pinHash:'local:'+fallbackHash(salt+':1234'),activo:true,creado:hoy(),creadoPor:'Sistema · equipo inicial',esDemo:false};
+      AUTH_USERS.push(u); changedUsers=true;
+    }else{
+      u.nombre=nombre;u.usuario=usuario;u.rol=rol;u.activo=true;
+      if(!u.salt || !u.pinHash){const salt='OBRA-CONTROL-V14-'+id+'-SALT';u.salt=salt;u.pinHash='local:'+fallbackHash(salt+':1234');changedUsers=true;}
+    }
+  }
   if(changedUsers)saveUsers(); if(changedCrews)saveCrews();
 }
 function enterDemoMode(){
@@ -1671,7 +1689,7 @@ function enterDemoMode(){
   toast('Modo demostración activo: puedes explorar y editar todos los módulos.','ok');
   location.hash='#/dashboard';render();
 }
-function legacyRole(role){ return ({'Administrador':'Administrador Praxis','Supervisor':'Supervisor / ITO','Encargado de Calidad':'Encargado de Calidad','Jefe de obra':'Jefe de Obra','Gerente de obra':'Gerente de Obra','Gerente de proyecto':'Gerente de Proyecto','Trabajador de obra':'Trabajador de obra','Trabajador común':'Trabajador común','Consulta':'Consulta'})[role]||'Trabajador de obra'; }
+function legacyRole(role){ return ({'Administrador':'Administrador Praxis','Supervisor':'Supervisor / ITO','Encargado de Calidad':'Encargado de Calidad','Jefe de obra':'Jefe de Obra','Jefe de terreno':'Jefe de Obra','Jefe de oficina técnica':'Jefe de oficina técnica','Gerente de obra':'Gerente de Obra','Gerente de proyecto':'Gerente de Proyecto','Trabajador de obra':'Trabajador de obra','Trabajador común':'Trabajador común','Consulta':'Consulta'})[role]||'Trabajador de obra'; }
 function randomSalt(){ return uid()+Math.random().toString(36).slice(2,10); }
 function fallbackHash(s){ let h1=2166136261; for(let i=0;i<s.length;i++){h1^=s.charCodeAt(i);h1=Math.imul(h1,16777619);} return (h1>>>0).toString(16).padStart(8,'0'); }
 async function pinHash(pin,salt,forceAlgo){
@@ -1776,7 +1794,7 @@ async function restoreCloudSession(){
 }
 function setLoggedIn(user){ CURRENT_USER=user; CURRENT_ROLE=legacyRole(user.rol); try{sessionStorage.setItem(SESSION_KEY,user.id);}catch(e){} document.body.classList.remove('auth-locked'); const n=$('#nav-users'); if(n)n.hidden=user.rol!=='Administrador'; const np=$('#nav-prevent'); if(np)np.hidden=!preventCanManage(); const ns=$('#nav-talk-sign'); if(ns)ns.hidden=!['Trabajador de obra','Trabajador común'].includes(user.rol); const nc=$('#nav-crews'); if(nc)nc.hidden=!isCrewManager(); const top=$('#topbar-user'); if(top)top.textContent=`${user.nombre} · ${user.rol}${user.cloud?' · ☁ Supabase':''}`; const pf=$('#nav-prevent-folder'); if(pf && ['prevent','academy'].includes((location.hash.split('/')[1]||'')))pf.open=true; render(); }
 async function logout(){ const wasCloud=!!CLOUD_USER; CLOUD_USER=null; CLOUD_SYNC_READY=false; clearTimeout(CLOUD_SAVE_TIMER); if(wasCloud){try{await window.OBRA_CLOUD.signOut()}catch(e){console.warn('Supabase sign out:',e)}} CURRENT_USER=null; try{sessionStorage.removeItem(SESSION_KEY);}catch(e){} location.hash='#/dashboard'; authScreen(''); }
-function isCrewManager(){ return ['Administrador','Supervisor','Jefe de obra','Gerente de obra','Gerente de proyecto'].includes(CURRENT_USER?.rol); }
+function isCrewManager(){ return ['Administrador','Supervisor','Jefe de obra','Jefe de terreno','Jefe de oficina técnica','Encargado de Calidad','Gerente de obra','Gerente de proyecto'].includes(CURRENT_USER?.rol); }
 function vCrews(){
  if(!isCrewManager()) return notFound('Acceso restringido: las cuadrillas las gestionan Administración y jefaturas.');
  const workers=AUTH_USERS.filter(u=>u.activo!==false && ['Trabajador de obra','Trabajador común'].includes(u.rol));
