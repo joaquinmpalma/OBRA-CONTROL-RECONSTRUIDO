@@ -1212,7 +1212,7 @@ const FORMS = {
     if(!saveCrews())return;closeModal();toast('Cuadrilla creada.','ok');location.hash='#/cuadrillas';render();
   },
   async 'user-create'(fd){
-    if(CURRENT_USER?.rol!=='Administrador')return toast('Solo el Administrador puede registrar usuarios.','err');
+    if(!canManageUsers())return toast('Solo el Administrador puede registrar usuarios.','err');
     const nombre=(fd.get('nombre')||'').trim(), usuario=(fd.get('usuario')||'').trim().toLowerCase(), rol=fd.get('rol'), pin=String(fd.get('pin')||''), pin2=String(fd.get('pin2')||'');
     if(!nombre||!/^[a-z0-9._-]{3,30}$/.test(usuario))return toast('Revise el nombre y el formato del usuario.','err');
     if(AUTH_USERS.some(u=>u.usuario.toLowerCase()===usuario))return toast('Ese nombre de usuario ya existe.','err');
@@ -1222,7 +1222,7 @@ const FORMS = {
     if(!saveUsers())return; closeModal();toast('Usuario registrado correctamente.','ok');location.hash='#/usuarios';render();
   },
   async 'user-reset-pin'(fd,form){
-    if(CURRENT_USER?.rol!=='Administrador')return toast('Solo el Administrador puede restablecer PIN.','err');
+    if(!canManageUsers())return toast('Solo el Administrador puede restablecer PIN.','err');
     const pin=String(fd.get('pin')||''), pin2=String(fd.get('pin2')||''), user=AUTH_USERS.find(u=>u.id===form.dataset.id);
     if(!user)return toast('No se encontró el usuario.','err'); if(!/^\d{4,8}$/.test(pin)||pin!==pin2)return toast('Los PIN deben tener 4 a 8 dígitos y coincidir.','err');
     user.salt=randomSalt();user.pinHash=await pinHash(pin,user.salt);saveUsers();closeModal();toast('PIN actualizado. Comuníquelo de forma privada al usuario.','ok');render();
@@ -1533,7 +1533,7 @@ const ACTIONS = {
   'crew-new':()=>crewForm(),
   'crew-delete':d=>{if(!isCrewManager())return toast('Solo administración y jefaturas pueden gestionar cuadrillas.','err');const c=CREWS.find(x=>x.id===d.id);if(!c)return;confirmDlg('¿Eliminar la cuadrilla '+c.nombre+'?',()=>{CREWS=CREWS.filter(x=>x.id!==c.id);saveCrews();render();toast('Cuadrilla eliminada.','ok');});},
   'user-reset-pin':d=>userResetPinForm(d.id),
-  'user-toggle':d=>{if(CURRENT_USER?.rol!=='Administrador')return toast('Solo el Administrador puede modificar usuarios.','err');const u=AUTH_USERS.find(x=>x.id===d.id);if(!u)return;if(u.rol==='Administrador'&&u.activo!==false&&AUTH_USERS.filter(x=>x.rol==='Administrador'&&x.activo!==false).length<=1)return toast('Debe quedar al menos un administrador activo.','err');u.activo=u.activo===false;saveUsers();toast(u.activo?'Cuenta activada.':'Cuenta desactivada.','ok');render();},
+  'user-toggle':d=>{if(!canManageUsers())return toast('Solo el Administrador puede modificar usuarios.','err');const u=AUTH_USERS.find(x=>x.id===d.id);if(!u)return;if(u.rol==='Administrador'&&u.activo!==false&&AUTH_USERS.filter(x=>x.rol==='Administrador'&&x.activo!==false).length<=1)return toast('Debe quedar al menos un administrador activo.','err');u.activo=u.activo===false;saveUsers();toast(u.activo?'Cuenta activada.':'Cuenta desactivada.','ok');render();},
   'integration-del': d => { if(!preventCanManage())return toast('Acceso restringido.','err'); confirmDlg('¿Quitar este vínculo de trazabilidad?',()=>{DB.integrationLinks=(DB.integrationLinks||[]).filter(x=>x.id!==d.id);save();toast('Vínculo eliminado; los registros originales se mantienen.','ok');render();},'Quitar vínculo'); },
   'prevent-new-hold':()=>{if(CURRENT_ROLE==='Consulta')return toast('Perfil Consulta: solo lectura.','err');preventHoldForm();},
   'prevent-resolve-hold':d=>{if(CURRENT_ROLE==='Consulta')return toast('Perfil Consulta: solo lectura.','err');preventResolveHoldForm(d.id);},
@@ -1690,6 +1690,7 @@ function enterDemoMode(){
   location.hash='#/dashboard';render();
 }
 function legacyRole(role){ return ({'Administrador':'Administrador Praxis','Supervisor':'Supervisor / ITO','Encargado de Calidad':'Encargado de Calidad','Jefe de obra':'Jefe de Obra','Jefe de terreno':'Jefe de Obra','Jefe de oficina técnica':'Jefe de oficina técnica','Gerente de obra':'Gerente de Obra','Gerente de proyecto':'Gerente de Proyecto','Trabajador de obra':'Trabajador de obra','Trabajador común':'Trabajador común','Consulta':'Consulta'})[role]||'Trabajador de obra'; }
+function canManageUsers(){ return ['Administrador','Gerente de proyecto','Jefe de oficina técnica'].includes(CURRENT_USER?.rol); }
 function randomSalt(){ return uid()+Math.random().toString(36).slice(2,10); }
 function fallbackHash(s){ let h1=2166136261; for(let i=0;i<s.length;i++){h1^=s.charCodeAt(i);h1=Math.imul(h1,16777619);} return (h1>>>0).toString(16).padStart(8,'0'); }
 async function pinHash(pin,salt,forceAlgo){
@@ -1792,7 +1793,7 @@ async function restoreCloudSession(){
   }
   return false;
 }
-function setLoggedIn(user){ CURRENT_USER=user; CURRENT_ROLE=legacyRole(user.rol); try{sessionStorage.setItem(SESSION_KEY,user.id);}catch(e){} document.body.classList.remove('auth-locked'); const n=$('#nav-users'); if(n)n.hidden=user.rol!=='Administrador'; const np=$('#nav-prevent'); if(np)np.hidden=!preventCanManage(); const ns=$('#nav-talk-sign'); if(ns)ns.hidden=!['Trabajador de obra','Trabajador común'].includes(user.rol); const nc=$('#nav-crews'); if(nc)nc.hidden=!isCrewManager(); const top=$('#topbar-user'); if(top)top.textContent=`${user.nombre} · ${user.rol}${user.cloud?' · ☁ Supabase':''}`; const pf=$('#nav-prevent-folder'); if(pf && ['prevent','academy'].includes((location.hash.split('/')[1]||'')))pf.open=true; render(); }
+function setLoggedIn(user){ CURRENT_USER=user; CURRENT_ROLE=legacyRole(user.rol); try{sessionStorage.setItem(SESSION_KEY,user.id);}catch(e){} document.body.classList.remove('auth-locked'); const n=$('#nav-users'); if(n)n.hidden=!['Administrador','Gerente de proyecto','Jefe de oficina técnica'].includes(user.rol); const np=$('#nav-prevent'); if(np)np.hidden=!preventCanManage(); const ns=$('#nav-talk-sign'); if(ns)ns.hidden=!['Trabajador de obra','Trabajador común'].includes(user.rol); const nc=$('#nav-crews'); if(nc)nc.hidden=!isCrewManager(); const top=$('#topbar-user'); if(top)top.textContent=`${user.nombre} · ${user.rol}${user.cloud?' · ☁ Supabase':''}`; const pf=$('#nav-prevent-folder'); if(pf && ['prevent','academy'].includes((location.hash.split('/')[1]||'')))pf.open=true; render(); }
 async function logout(){ const wasCloud=!!CLOUD_USER; CLOUD_USER=null; CLOUD_SYNC_READY=false; clearTimeout(CLOUD_SAVE_TIMER); if(wasCloud){try{await window.OBRA_CLOUD.signOut()}catch(e){console.warn('Supabase sign out:',e)}} CURRENT_USER=null; try{sessionStorage.removeItem(SESSION_KEY);}catch(e){} location.hash='#/dashboard'; authScreen(''); }
 function isCrewManager(){ return ['Administrador','Supervisor','Jefe de obra','Jefe de terreno','Jefe de oficina técnica','Encargado de Calidad','Gerente de obra','Gerente de proyecto'].includes(CURRENT_USER?.rol); }
 function vCrews(){
@@ -1807,7 +1808,7 @@ function crewForm(){
  openModal('Crear cuadrilla',`<form data-form="crew-create"><div class="form-grid">${F('cn','Nombre de la cuadrilla *',`<input name="nombre" required maxlength="70" placeholder="Ej. Cuadrilla de hormigonado">`)}${F('cr','Responsable / jefe de cuadrilla',`<input name="responsable" maxlength="90" placeholder="Nombre del responsable">`,'full')}${F('cm','Integrantes *',`<select name="miembros" multiple required size="8">${workers.map(u=>`<option value="${esc(u.id)}">${esc(u.nombre)} · @${esc(u.usuario)}</option>`).join('')}</select><div class="muted small">En computador mantenga Ctrl/Cmd para seleccionar varios trabajadores.</div>`,'full')}</div><div class="modal-foot"><button type="button" class="btn btn-sec" data-act="close">Cancelar</button><button class="btn" type="submit">Guardar cuadrilla</button></div></form>`);
 }
 function createBaseWorkers(){
- if(CURRENT_USER?.rol!=='Administrador')return toast('Solo el Administrador puede crear las cuentas base.','err');
+ if(!canManageUsers())return toast('Solo el Administrador puede crear las cuentas base.','err');
  const existing=new Set(AUTH_USERS.map(u=>u.usuario.toLowerCase()));
  const credentials=[];
  for(let i=1;i<=20;i++){
@@ -1826,14 +1827,14 @@ function createBaseWorkers(){
 }
 
 function vUsers(){
- if(CURRENT_USER?.rol!=='Administrador') return notFound('Acceso restringido: solo el Administrador puede gestionar usuarios.');
+ if(!canManageUsers()) return notFound('Acceso restringido: solo el Administrador puede gestionar usuarios.');
  return `<div class="page-head"><div><div class="section-kicker">ADMINISTRACIÓN DE ACCESOS</div><h2>👥 Gestión de usuarios</h2><p class="muted">Registre cuentas y asigne una categoría de trabajo.</p></div><div class="row wrap"><button class="btn btn-sec" data-act="workers-seed">Crear 20 trabajadores base</button><button class="btn" data-act="user-new">+ Registrar usuario</button></div></div><div class="notice">Los usuarios se guardan en este navegador. Para compartir cuentas de forma segura entre dispositivos se requiere autenticación y base de datos en servidor.</div><div class="grid stats">${stat('Usuarios registrados',AUTH_USERS.length)}${stat('Cuentas activas',AUTH_USERS.filter(u=>u.activo!==false).length,'grn')}${stat('Administradores',AUTH_USERS.filter(u=>u.rol==='Administrador'&&u.activo!==false).length)}</div><div class="card"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Categoría</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr></thead><tbody>${AUTH_USERS.map(u=>`<tr><td><b>${esc(u.nombre)}</b></td><td>${esc(u.usuario)}</td><td><span class="user-role-chip">${esc(u.rol)}</span></td><td><span class="badge ${u.activo===false?'b-red':'b-grn'}">${u.activo===false?'Inactivo':'Activo'}</span></td><td>${esc(u.creado||'—')}</td><td><div class="row wrap"><button class="btn btn-sec btn-sm" data-act="user-reset-pin" data-id="${esc(u.id)}">Restablecer PIN</button>${u.id!==CURRENT_USER.id?`<button class="btn ${u.activo===false?'btn-sec':'btn-danger'} btn-sm" data-act="user-toggle" data-id="${esc(u.id)}">${u.activo===false?'Activar':'Desactivar'}</button>`:'<span class="muted small">Sesión actual</span>'}</div></td></tr>`).join('')}</tbody></table></div></div>`;
 }
 function userCreateForm(){
- if(CURRENT_USER?.rol!=='Administrador') return toast('Solo el Administrador puede registrar usuarios.','err');
+ if(!canManageUsers()) return toast('Solo el Administrador puede registrar usuarios.','err');
  openModal('Registrar nuevo usuario',`<form data-form="user-create"><div class="form-grid">${F('un','Nombre completo *',`<input name="nombre" required maxlength="90">`)}${F('uu','Nombre de usuario *',`<input name="usuario" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._-]{3,30}" placeholder="Sin espacios">`)}${F('ur','Categoría de trabajador *',`<select name="rol" required>${USER_ROLES.map(r=>`<option>${esc(r)}</option>`).join('')}</select>`)}${F('up','Contraseña numérica *',`<input name="pin" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8">`)}${F('up2','Confirmar contraseña *',`<input name="pin2" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8">`)}</div><div class="notice">El usuario podrá entrar con su nombre de usuario y PIN numérico. Comparta sus credenciales de forma privada.</div><div class="modal-foot"><button type="button" class="btn btn-sec" data-act="close">Cancelar</button><button type="submit" class="btn">Guardar usuario</button></div></form>`);
 }
-function userResetPinForm(id){ if(CURRENT_USER?.rol!=='Administrador')return toast('Solo el Administrador puede restablecer PIN.','err'); const u=AUTH_USERS.find(x=>x.id===id); if(!u)return; openModal('Restablecer PIN · '+esc(u.usuario),`<form data-form="user-reset-pin" data-id="${esc(u.id)}"><div class="form-grid">${F('rp','Nuevo PIN numérico *',`<input name="pin" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8">`)}${F('rp2','Confirmar nuevo PIN *',`<input name="pin2" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8">`)}</div><div class="modal-foot"><button type="button" class="btn btn-sec" data-act="close">Cancelar</button><button type="submit" class="btn">Actualizar PIN</button></div></form>`); }
+function userResetPinForm(id){ if(!canManageUsers())return toast('Solo el Administrador puede restablecer PIN.','err'); const u=AUTH_USERS.find(x=>x.id===id); if(!u)return; openModal('Restablecer PIN · '+esc(u.usuario),`<form data-form="user-reset-pin" data-id="${esc(u.id)}"><div class="form-grid">${F('rp','Nuevo PIN numérico *',`<input name="pin" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8">`)}${F('rp2','Confirmar nuevo PIN *',`<input name="pin2" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8">`)}</div><div class="modal-foot"><button type="button" class="btn btn-sec" data-act="close">Cancelar</button><button type="submit" class="btn">Actualizar PIN</button></div></form>`); }
 
 /* ============ 8. ENRUTADOR Y ARRANQUE ============ */
 const TITLES = { cuadrillas: 'Cuadrillas de obra', prevent: 'PRAXIS PREVENT', academy: 'PRAXIS ACADEMY', control: 'Centro de control', alertas: 'Centro de alertas', calendario: 'Calendario', presentacion: 'Modo presentación', praxis: 'Praxis Quality Hub', terreno: 'Modo Terreno', dashboard: 'Dashboard', proyectos: 'Proyectos', proyecto: 'Ficha de proyecto', frente: 'Frente de trabajo', inspecciones: 'Inspecciones', dhncr: 'DH / NCR', registro: 'Ficha DH / NCR', evidencias: 'Evidencias', indicadores: 'Indicadores', reportes: 'Reportes', usuarios: 'Gestión de usuarios' };
@@ -1894,7 +1895,7 @@ function render() {
     case 'cuadrillas': html = vCrews(); break;
     default: html = notFound('Página no encontrada');
   }
-  if (r === 'usuarios' && CURRENT_USER?.rol !== 'Administrador') html = notFound('Acceso restringido: solo el Administrador puede gestionar usuarios.');
+  if (r === 'usuarios' && !canManageUsers()) html = notFound('Acceso restringido: solo el Administrador puede gestionar usuarios.');
   if (r === 'cuadrillas' && !isCrewManager()) html = notFound('Acceso restringido: las cuadrillas las gestionan Administración y jefaturas.');
   $('#view').innerHTML = uxGuide(r) + html;
   if (UI.list) UI.list();
@@ -1904,7 +1905,7 @@ function render() {
     if (a.id !== 'nav-users' && a.id !== 'nav-crews') a.hidden = CURRENT_USER?.rol === 'Trabajador de obra' && !['terreno','inspecciones','evidencias','academy'].includes(a.dataset.route);
   });
   const pf=$('#nav-prevent-folder'); if(pf && ['prevent','academy'].includes(r)) pf.open=true;
-  const nu=$('#nav-users'); if(nu) nu.hidden=CURRENT_USER?.rol!=='Administrador';
+  const nu=$('#nav-users'); if(nu) nu.hidden=!canManageUsers();
   const nc=$('#nav-crews'); if(nc) nc.hidden=!isCrewManager();
   const tu=$('#topbar-user'); if(tu && CURRENT_USER) tu.textContent=`${CURRENT_USER.nombre} · ${CURRENT_USER.rol}`;
   $('#sidebar').classList.remove('open'); $('#overlay').classList.remove('open');
