@@ -440,3 +440,31 @@ body.auth-locked .auth-screen{display:flex}
 .auth-cloud-panel p{margin:.25rem 0 .8rem}
 .auth-cloud-panel form{display:grid;gap:.65rem}
 .auth-cloud-panel .btn{width:100%}
+
+
+/* DH / NCR · formulario simplificado y ficha PDF */
+.record-form-intro{background:linear-gradient(135deg,#eef4fb,#f8fafc);border:1px solid #d7e2ef;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.record-form-intro>b{font-size:1.02rem;color:var(--navy)}
+.record-form-intro p{margin:.35rem 0 .7rem;color:var(--muted);font-size:.88rem}
+.record-form-steps{display:flex;gap:7px;flex-wrap:wrap}
+.record-form-steps span{background:#fff;border:1px solid #d7e2ef;border-radius:20px;padding:5px 10px;font-size:.75rem;font-weight:700;color:#35577e}
+.record-advanced{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:5px;background:#fbfcfe}
+.record-advanced summary{cursor:pointer;font-weight:700;color:var(--navy);padding:3px}
+.record-advanced[open] summary{margin-bottom:12px}
+.record-advanced .form-grid{margin-top:8px}
+@media print{
+  body{background:#fff!important;color:#111!important}
+  #sidebar,#topbar,#nav,.no-print,.modal-wrap,.toast-container{display:none!important}
+  #view{display:block!important;margin:0!important;padding:0!important}
+  .page-head{border-bottom:1px solid #bbb;padding-bottom:10px;margin-bottom:14px}
+  .page-head h2{font-size:20pt!important}
+  .card{box-shadow:none!important;border:1px solid #ddd!important;break-inside:avoid;margin:0 0 10px!important;padding:12px!important}
+  .kv{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px 14px!important}
+  .grid.two{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .block{break-inside:avoid}
+  .evidence-card img,.photo-grid img{max-height:150px;object-fit:contain}
+  a{color:#111!important;text-decoration:none!important}
+  .badge{border:1px solid #bbb!important;background:#f4f4f4!important;color:#111!important}
+  .timeline{break-inside:avoid}
+  @page{size:A4;margin:14mm}
+}
