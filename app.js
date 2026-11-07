@@ -802,7 +802,7 @@ function vRegistro(id) {
   return `<div class="page-head"><div><div class="muted small"><a href="#/dhncr">← DH / NCR</a> · <a href="#/proyecto/${enc(r.projectId)}/${r.tipo.toLowerCase()}">${esc(r.projectId)}</a></div><h2>${esc(r.code)}</h2><div style="font-weight:600">${esc(r.titulo.toUpperCase())}</div></div>
     <div class="row no-print"><button class="btn btn-sec btn-sm" onclick="window.print()">📄 Exportar PDF</button>${badgeEstado(r.estado)}<button class="btn btn-sec btn-sm" data-act="rec-edit" data-id="${esc(r.uid)}">Editar</button><button class="btn btn-danger btn-sm" data-act="rec-del" data-id="${esc(r.uid)}">Eliminar</button></div></div>
   ${al.length ? `<div class="card"><h3>Alertas</h3>${al.map(a => alertHTML(Object.assign({}, a, { link: '' }))).join('')}</div>` : ''}
-  <div class="card"><div class="kv">${kv('Tipo', r.tipo)}${kv('Criticidad', badgeCrit(r.criticidad))}${kv('Fecha', fmtFecha(r.fecha))}${kv('Sector', esc(r.sector))}${kv('Partida', esc(r.partida))}${kv('Especialidad', esc(r.especialidad))}${kv('Vivienda / frente', fr ? esc(fr.nombre) : '')}${kv('Categoría de causa', esc(r.categoriaCausa))}${kv('Responsable', esc(r.responsable))}${kv('Fecha compromiso', fmtFecha(r.fechaCompromiso) + vencBadge(r))}${kv('Días adicionales', String(r.diasAdicionales||0))}${kv('Motivo de ampliación', esc(r.motivoAmpliacion||'Sin ampliación'))}${kv('Impacto en programa', esc(r.detalleAmpliacion||'—'))}${kv('Validación de ampliación', esc(r.ampliacionValidada||'Pendiente de validación'))}</div></div>
+  <div class="card"><div class="kv">${kv('Tipo', r.tipo)}${kv('Criticidad', badgeCrit(r.criticidad))}${kv('Fecha', fmtFecha(r.fecha))}${kv('Sector', esc(r.sector))}${kv('Partida', esc(r.partida))}${kv('Especialidad', esc(r.especialidad))}${kv('Vivienda / frente', fr ? esc(fr.nombre) : '')}${kv('Categoría de causa', esc(r.categoriaCausa))}${kv('Responsable de resolver', esc(r.responsable))}${kv('Responsable de ejecutar', esc(r.responsableEjecucion||'—'))}${kv('Responsable de verificar', esc(r.responsableVerificacion||'—'))}${kv('Fecha compromiso', fmtFecha(r.fechaCompromiso) + vencBadge(r))}${kv('Días adicionales', String(r.diasAdicionales||0))}${kv('Motivo de ampliación', esc(r.motivoAmpliacion||'Sin ampliación'))}${kv('Impacto en programa', esc(r.detalleAmpliacion||'—'))}${kv('Validación de ampliación', esc(r.ampliacionValidada||'Pendiente de validación'))}</div></div>
   <div class="grid two"><div>
     <div class="card"><h3>Descripción del hallazgo</h3>${blockTxt('Descripción', r.descripcion)}${blockTxt('Requisito / antecedente', r.requisito)}</div>
     <div class="card"><h3>Análisis de causa</h3>${blockTxt('Causa inmediata', r.causaInmediata)}${blockTxt('Causa sistémica', r.causaSistemica)}${blockTxt('Condiciones contribuyentes', r.condicionesContribuyentes || '')}</div>
@@ -1300,6 +1300,13 @@ const FORMS = {
     const r = Object.assign({ uid: uid(), code: nextCode(tipo), tipo, estado: 'Detectado', verificaciones: [], fechaCierre: '', timeline: [{ fecha: data.fecha, estado: 'Detectado', nota: 'Registro creado' }] }, data);
     DB.records.push(r); save(); closeModal(); toast(r.code + ' creado.', 'ok');
     location.hash = '#/registro/' + enc(r.uid);
+  },
+  'innov'(fd,form){
+    const r=getRec(form.dataset.id);if(!r)return;const g=k=>String(fd.get(k)||'').trim();
+    if(!g('titulo'))return toast('Ingrese el nombre de la propuesta.','err');
+    const old=r.solucionInnovadora||{};
+    r.solucionInnovadora=Object.assign({},old,{activa:true,titulo:g('titulo'),producto:g('titulo'),problema:g('descripcion'),material:g('material'),procedimiento:g('procedimiento'),justificacion:g('justificacion'),beneficio:g('beneficio'),prevencion:g('beneficio')||old.prevencion||''});
+    save();closeModal();toast('Propuesta innovadora guardada sin alterar sus antecedentes económicos ni alternativas existentes.','ok');render();
   },
   'quality-response'(fd,form){
     const r=getRec(form.dataset.id); if(!r)return;
