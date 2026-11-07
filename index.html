@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OBRA CONTROL v14 · Gestión integral de obra</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-locked">
+<div id="auth-screen" class="auth-screen" aria-live="polite"></div>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">OC</div>
+      <div>
+        <div class="brand-name">OBRA CONTROL</div>
+        <div class="brand-sub">Gestión de obra · Calidad · Formación</div><div class="brand-company">PRAXIS EDIFICACIONES</div>
+      </div>
+    </div>
+    <nav id="nav">
+      <a href="#/praxis" data-route="praxis">⭐ Praxis Quality Hub</a>
+      <a href="#/control" data-route="control">🎛️ Centro de control</a>
+      <a href="#/alertas" data-route="alertas">🔔 Alertas</a>
+      <a href="#/calendario" data-route="calendario">📅 Calendario</a>
+      <a href="#/presentacion" data-route="presentacion">✨ Presentación</a>
+      <a href="#/terreno" data-route="terreno">📱 Mi trabajo en terreno</a>
+      <a href="#/dashboard" data-route="dashboard">🏠 Dashboard</a>
+      <a href="#/proyectos" data-route="proyectos">📁 Proyectos</a>
+      <a href="#/inspecciones" data-route="inspecciones">📋 Inspecciones de obra</a>
+      <a href="#/dhncr" data-route="dhncr">⚠️ DH / NCR</a>
+      <a href="planos/index.html" target="_blank" rel="noopener">📐 Viviendas y planos</a>
+      <a href="gantt/index.html" target="_blank" rel="noopener">📆 Carta Gantt diaria</a>
+      <details class="nav-folder" id="nav-prevent-folder">
+        <summary>🎓 Formación</summary>
+        <div class="nav-submenu">
+          <a href="#/academy" data-route="academy">🎓 PRAXIS ACADEMY</a>
+          <a href="#/prevent" data-route="prevent" id="nav-prevent" hidden>🛡️ PRAXIS PREVENT</a>
+          <a href="#/prevent/firmar" data-route="prevent" id="nav-talk-sign" hidden>✍️ Firmar charla</a>
+        </div>
+      </details>
+      <a href="#/evidencias" data-route="evidencias">📸 Evidencias y archivos</a>
+      <a href="#/indicadores" data-route="indicadores">📊 Indicadores</a>
+      <a href="#/reportes" data-route="reportes">📄 Informes y reportes</a>
+      <a href="#/cuadrillas" data-route="cuadrillas" id="nav-crews" hidden>👷 Cuadrillas de obra</a>
+      <a href="#/usuarios" data-route="usuarios" id="nav-users" hidden>👥 Gestión de usuarios</a>
+    </nav>
+    <div class="sidebar-foot">
+      <details class="maintenance-tools"><summary>⚙ Copias y mantenimiento</summary><p>Estas acciones afectan los datos guardados en este navegador. Descarga un respaldo antes de importar, restaurar o borrar.</p><button class="btn btn-ghost btn-sm" id="btn-backup">⬇ Descargar respaldo de datos (JSON)</button>
+      <button class="btn btn-ghost btn-sm" id="btn-import">⬆ Restaurar datos desde un respaldo JSON</button>
+      <input id="backup-file" type="file" accept="application/json,.json" hidden>
+      <button class="btn btn-ghost btn-sm" id="btn-reset">Cargar datos de demostración</button>
+      <button class="btn btn-ghost btn-sm" id="btn-clear">Eliminar todos los datos locales</button></details>
+      <div class="version">v14 · Calidad · Prevent · Academy · Viviendas</div>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+  <div class="main">
+    <header class="topbar">
+      <button class="btn-icon" id="btn-menu" aria-label="Menú">☰</button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-user" id="topbar-user">Praxis Edificaciones</div><button class="btn btn-sec btn-sm" id="btn-logout" data-act="logout">Cerrar sesión</button>
+    </header>
+    <main id="view" class="view"></main>
+  </div>
+</div>
+
+<div class="modal-wrap" id="modal-wrap">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cloud.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

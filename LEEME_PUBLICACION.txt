@@ -1,0 +1,28 @@
+OBRA CONTROL V14 — PAQUETE DE PUBLICACIÓN
+
+Contenido conservado:
+- Aplicación principal: Calidad, DH/NCR/RDI, PREVENT, ACADEMY, proyectos,
+  inspecciones, evidencias, cuadrillas, usuarios e indicadores.
+- Viviendas y planos: carpeta planos/ y sus seis láminas.
+- Carta Gantt diaria: carpeta gantt/.
+- Integración Supabase: cloud.js y migración SQL.
+
+Publicación:
+1. Subir el contenido de esta carpeta a la raíz de un repositorio GitHub.
+2. Importar ese repositorio desde Vercel como proyecto estático.
+3. La raíz de publicación debe ser esta carpeta (donde está index.html).
+4. No usar build command; output directory: . (raíz).
+5. Mantener la migración Supabase ya aplicada y configurar la URL pública y
+   publishable key indicadas en cloud.js, o sustituirlas por variables/build
+   config si se cambia el adaptador.
+
+Alcance real de sincronización:
+- Supabase Auth exige una cuenta existente y perfil activo en public.profiles.
+- El respaldo privado sincroniza los módulos main, plans y gantt por usuario.
+- No es todavía un sistema colaborativo multiusuario sobre tablas relacionales
+  de calidad, prevención o viviendas. La migración no altera esas tablas.
+- El modo demo/local permanece disponible y guarda cambios en el navegador.
+
+Seguridad:
+- La clave publishable es apta para cliente; nunca colocar service_role en el
+  navegador. La protección de datos depende de RLS.
