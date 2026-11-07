@@ -800,7 +800,7 @@ function vRegistro(id) {
   }
 
   return `<div class="page-head"><div><div class="muted small"><a href="#/dhncr">← DH / NCR</a> · <a href="#/proyecto/${enc(r.projectId)}/${r.tipo.toLowerCase()}">${esc(r.projectId)}</a></div><h2>${esc(r.code)}</h2><div style="font-weight:600">${esc(r.titulo.toUpperCase())}</div></div>
-    <div class="row">${badgeEstado(r.estado)}<button class="btn btn-sec btn-sm" data-act="rec-edit" data-id="${esc(r.uid)}">Editar</button><button class="btn btn-danger btn-sm" data-act="rec-del" data-id="${esc(r.uid)}">Eliminar</button></div></div>
+    <div class="row no-print"><button class="btn btn-sec btn-sm" onclick="window.print()">📄 Exportar PDF</button>${badgeEstado(r.estado)}<button class="btn btn-sec btn-sm" data-act="rec-edit" data-id="${esc(r.uid)}">Editar</button><button class="btn btn-danger btn-sm" data-act="rec-del" data-id="${esc(r.uid)}">Eliminar</button></div></div>
   ${al.length ? `<div class="card"><h3>Alertas</h3>${al.map(a => alertHTML(Object.assign({}, a, { link: '' }))).join('')}</div>` : ''}
   <div class="card"><div class="kv">${kv('Tipo', r.tipo)}${kv('Criticidad', badgeCrit(r.criticidad))}${kv('Fecha', fmtFecha(r.fecha))}${kv('Sector', esc(r.sector))}${kv('Partida', esc(r.partida))}${kv('Especialidad', esc(r.especialidad))}${kv('Vivienda / frente', fr ? esc(fr.nombre) : '')}${kv('Categoría de causa', esc(r.categoriaCausa))}${kv('Responsable', esc(r.responsable))}${kv('Fecha compromiso', fmtFecha(r.fechaCompromiso) + vencBadge(r))}${kv('Días adicionales', String(r.diasAdicionales||0))}${kv('Motivo de ampliación', esc(r.motivoAmpliacion||'Sin ampliación'))}${kv('Impacto en programa', esc(r.detalleAmpliacion||'—'))}${kv('Validación de ampliación', esc(r.ampliacionValidada||'Pendiente de validación'))}</div></div>
   <div class="grid two"><div>
@@ -964,62 +964,62 @@ function frentesOpts(pid, sel) {
   return opts(((p && p.frentes) || []).map(f => [f.id, f.nombre]), sel, 'Sin asignar');
 }
 function recForm(r, pid, tipo) {
-  const e = !!r; r = r || { tipo: tipo || 'NCR', projectId: pid || '', fecha: hoy(), criticidad: 'Menor', especialidad: 'Hormigón' };
-  if (!DB.projects.length) return toast('Primero cree un proyecto.', 'err');
-  openModal(e ? 'Editar ' + r.code : 'Nuevo registro DH / NCR', `<form data-form="rec" data-edit="${e ? esc(r.uid) : ''}"><div class="form-grid">
-    <div class="solution-form-block full"><div class="solution-form-title">1. Datos generales del registro</div><div class="muted small">Estructura basada en las planillas de hallazgo de hormigón y registro de no conformidad entregadas.</div></div>
-    ${F('rt', 'Tipo *', `<select id="rt" name="tipo" ${e ? 'disabled' : ''}>${opts(['DH', 'NCR'], r.tipo)}</select>`)}
-    ${F('rp', 'Proyecto *', `<select id="rp" name="projectId" required>${projOpts(r.projectId, 'Seleccione…')}</select>`)}
-    ${F('rti', 'Título *', `<input id="rti" name="titulo" required value="${esc(r.titulo)}" placeholder="Ej: Nido de piedra en radier">`, 'full')}
-    ${F('rf', 'Fecha *', `<input id="rf" type="date" name="fecha" required value="${esc(r.fecha)}">`)}
-    ${F('rfr', 'Vivienda / frente', `<select id="rfr" name="frenteId">${frentesOpts(r.projectId, r.frenteId)}</select>`)}
-    ${F('rdetector','Nombre detector / quien informa',`<input name="nombreDetector" value="${esc(r.nombreDetector||'')}" placeholder="Nombre y apellido">`)}
-    ${F('rcargo','Cargo del detector',`<input name="cargoDetector" value="${esc(r.cargoDetector||'')}">`)}
-    ${F('rplano','Plano N° / revisión',`<input name="plano" value="${esc(r.plano||'')}" placeholder="Código y revisión">`)}
-    ${F('rs', 'Sector', `<input id="rs" name="sector" value="${esc(r.sector)}">`)}
-    ${F('rpa', 'Partida', `<input id="rpa" name="partida" value="${esc(r.partida)}">`)}
-    ${F('rel', 'Elemento constructivo para reincidencia', `<input id="rel" name="elementoConstructivo" value="${esc(r.elementoConstructivo || r.partida || r.sector || '')}" placeholder="Ej: Radier de hormigón">`, 'full')}
-    ${F('rfam', 'Familia del problema', `<input id="rfam" name="familiaProblema" value="${esc(r.familiaProblema || '')}" placeholder="Ej: Nido de piedra / segregación">`, 'full')}
-    ${F('res', 'Especialidad', `<select id="res" name="especialidad">${opts(ESPECIALIDADES, r.especialidad)}</select>`)}
-    ${F('rcr', 'Criticidad', `<select id="rcr" name="criticidad">${opts(CRITICIDADES, r.criticidad)}</select>`)}
-    ${F('rcc', 'Categoría de causa', `<select id="rcc" name="categoriaCausa">${opts(CAUSAS, r.categoriaCausa, 'Sin definir')}</select>`)}
-    ${F('rre', 'Responsable *', `<input id="rre" name="responsable" required value="${esc(r.responsable)}">`)}
-    ${F('rfc', 'Fecha compromiso', `<input id="rfc" type="date" name="fechaCompromiso" value="${esc(r.fechaCompromiso)}">`)}
-    ${F('rdias', 'Días adicionales solicitados para la tarea', `<input id="rdias" type="number" min="0" step="1" name="diasAdicionales" value="${esc(r.diasAdicionales||0)}" placeholder="0">`)}
-    ${F('rmotdias', 'Motivo de ampliación / impacto en programa', `<select id="rmotdias" name="motivoAmpliacion">${opts(['Sin ampliación','NCR / no conformidad','DH / hallazgo técnico','Clima','Siniestro / accidente','Falta de material','Equipo fuera de servicio','Cambio de diseño / RDI','Interferencia de otra cuadrilla','Otro'], r.motivoAmpliacion || 'Sin ampliación')}</select>`)}
-    ${F('rdiasnota', 'Justificación y tarea afectada', `<textarea id="rdiasnota" name="detalleAmpliacion" placeholder="Indique tarea afectada, fecha de detención, evidencia y días solicitados">${esc(r.detalleAmpliacion||'')}</textarea>`, 'full')}
-    ${F('rvalidias', 'Validación de ampliación', `<select id="rvalidias" name="ampliacionValidada">${opts(['Pendiente de validación','Validada por supervisor','Rechazada'], r.ampliacionValidada || 'Pendiente de validación')}</select>`)}
-    ${F('rco', 'Costo de no calidad ($)', `<input id="rco" type="number" min="0" step="1" name="costoNoCalidad" value="${esc(r.costoNoCalidad||0)}">`)}
-    ${F('rhh', 'Horas improductivas', `<input id="rhh" type="number" min="0" step="0.5" name="horasNoCalidad" value="${esc(r.horasNoCalidad||0)}">`)}
-    <div class="solution-form-block full"><div class="solution-form-title">2. Descripción del hallazgo / no conformidad y evidencia objetiva</div></div>
-    ${F('rd', 'Descripción *', `<textarea id="rd" name="descripcion" required>${esc(r.descripcion)}</textarea>`, 'full')}
-    ${F('robj','Evidencia objetiva / qué se observó',`<textarea name="evidenciaObjetiva" placeholder="Medición, condición visible, cantidad, ubicación, fecha y requisito incumplido">${esc(r.evidenciaObjetiva||'')}</textarea>`,'full')}
-    ${F('rrq', 'Requisito asociado', `<textarea id="rrq" name="requisito">${esc(r.requisito)}</textarea>`, 'full')}
-    <div class="solution-form-block full"><div class="solution-form-title">4. Análisis de causa raíz</div></div>
-    ${F('rcausa1','Causal raíz de 1er orden',`<input name="causalRaiz1" value="${esc(r.causalRaiz1||'')}">`)}
-    ${F('rcausa2','Causal raíz de 2do orden',`<input name="causalRaiz2" value="${esc(r.causalRaiz2||'')}">`)}
-    ${F('rci', 'Causa inmediata', `<textarea id="rci" name="causaInmediata">${esc(r.causaInmediata)}</textarea>`)}
-    ${F('rcs', 'Causa sistémica', `<textarea id="rcs" name="causaSistemica">${esc(r.causaSistemica)}</textarea>`)}
-    ${F('rccn', 'Condiciones contribuyentes', `<textarea id="rccn" name="condicionesContribuyentes">${esc(r.condicionesContribuyentes || '')}</textarea>`, 'full')}
-    <div class="solution-form-block full"><div class="solution-form-title">3. Corrección inmediata / corrección técnica</div></div>
-    ${F('rac', 'Acción correctiva / corrección inmediata', `<textarea id="rac" name="accionCorrectiva">${esc(r.accionCorrectiva)}</textarea>`)}
-    ${F('rtecnica','Corrección técnica propuesta',`<textarea name="correccionTecnica" placeholder="Cómo dejar el elemento conforme a planos y EETT">${esc(r.correccionTecnica||r.solucionPropuesta||'')}</textarea>`)}
-    ${F('rmano','Mano de obra / recursos humanos',`<input name="manoObra" value="${esc(r.manoObra||'')}">`)}
-    ${F('requipo','Equipos requeridos',`<input name="equiposCorreccion" value="${esc(r.equiposCorreccion||'')}">`)}
-    ${F('rmaterial','Materiales requeridos',`<input name="materialesCorreccion" value="${esc(r.materialesCorreccion||r.materialSolucion||'')}">`)}
-    ${F('rotros','Otros recursos / restricciones',`<input name="otrosRecursos" value="${esc(r.otrosRecursos||'')}">`)}
-    ${F('rautoriza','Autorización de corrección',`<select name="autorizacionCorreccion">${opts(['Pendiente','Procede','No procede'],r.autorizacionCorreccion||'Pendiente')}</select>`)}
-    <div class="solution-form-block full"><div class="solution-form-title">5. Plan de acción correctiva y preventiva</div></div>
-    ${F('rap', 'Acción preventiva', `<textarea id="rap" name="accionPreventiva">${esc(r.accionPreventiva)}</textarea>`)}
-    <div class="solution-form-block full preventive-required"><div class="solution-form-title">🛡️ Medida preventiva obligatoria</div><div class="muted small">Indique cómo evitar que el problema vuelva a ocurrir. En NCR se recomienda completar este campo antes de guardar.</div></div>
-    ${F('rmp', 'Medida preventiva * para NCR', `<textarea id="rmp" name="medidaPreventiva" placeholder="Ej: verificar acceso del vibrador entre armaduras y registrar control previo al vaciado…">${esc(r.medidaPreventiva || r.accionPreventiva || '')}</textarea>`, 'full')}
-    ${F('rman', 'Manual PRAXIS ACADEMY relacionado', `<select id="rman" name="manualAcademyId">${academyManualOptions(r.manualAcademyId || '')}</select>`, 'full')}
-    <div class="solution-form-block full"><div class="solution-form-title">🛠️ Solución propuesta</div><div class="muted small" style="margin-bottom:.6rem">Solución estándar del DH/NCR. Es editable y puede actualizarse durante el seguimiento.</div></div>
-    ${F('rsp', '¿Qué se propone hacer?', `<textarea id="rsp" name="solucionPropuesta" placeholder="Describa la solución propuesta para resolver el hallazgo…">${esc(r.solucionPropuesta || r.accionCorrectiva || '')}</textarea>`, 'full')}
-    ${F('rms', 'Material / recurso', `<input id="rms" name="materialSolucion" value="${esc(r.materialSolucion || '')}" placeholder="Ej: mortero de reparación, separadores, protocolo, herramienta…">`)}
-    ${F('rpr', 'Cómo se realizará', `<textarea id="rpr" name="procedimientoSolucion" placeholder="Indique brevemente cómo se ejecutará la solución…">${esc(r.procedimientoSolucion || '')}</textarea>`)}
-    ${F('ros', 'Observación de la solución', `<textarea id="ros" name="observacionSolucion" placeholder="Condiciones, restricciones o notas…">${esc(r.observacionSolucion || '')}</textarea>`, 'full')}
-  </div><div class="modal-foot"><button type="button" class="btn btn-sec" data-act="close">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`, true);
+  const e=!!r; r=r||{tipo:tipo||'NCR',projectId:pid||'',fecha:hoy(),criticidad:'Menor',especialidad:'Hormigón'};
+  if(!DB.projects.length)return toast('Primero cree un proyecto.','err');
+  const field=(name,label,value,placeholder='',full=false)=>F(name,label,`<textarea name="${name}" ${placeholder?'placeholder="'+placeholder+'"':''}>${esc(value||'')}</textarea>`,full?'full':undefined);
+  openModal(e?'Editar '+r.code:'Nuevo '+(r.tipo==='DH'?'DH · Hallazgo técnico':'NCR · No conformidad'),`<form data-form="rec" data-edit="${e?esc(r.uid):''}">
+  <div class="record-form-intro"><b>${r.tipo==='DH'?'DH · Detectar y comunicar un hallazgo':'NCR · Registrar un incumplimiento que debe corregirse'}</b><p>Complete los datos básicos en orden. Escriba qué observó, dónde ocurrió y qué se debe hacer. Los antecedentes técnicos adicionales están al final.</p><div class="record-form-steps"><span>1 · Identificar</span><span>2 · Describir</span><span>3 · Corregir</span></div></div>
+  <div class="solution-form-block full"><div class="solution-form-title">1. Identificación del registro</div><div class="muted small">¿Dónde ocurrió y quién debe hacerse cargo?</div></div>
+  <div class="form-grid">
+  ${F('rt','Tipo de registro',`<select name="tipo" ${e?'disabled':''}>${opts(['DH','NCR'],r.tipo)}</select>`)}
+  ${F('rp','Proyecto *',`<select name="projectId" required>${projOpts(r.projectId,'Seleccione proyecto')}</select>`)}
+  ${F('rti','Título breve *',`<input name="titulo" required value="${esc(r.titulo||'')}" placeholder="Ej. Nido de piedra en radier">`,'full')}
+  ${F('rf','Fecha de detección *',`<input type="date" name="fecha" required value="${esc(r.fecha||hoy())}">`)}
+  ${F('rfr','Vivienda / frente',`<select name="frenteId">${frentesOpts(r.projectId,r.frenteId)}</select>`)}
+  ${F('rs','Ubicación / sector',`<input name="sector" value="${esc(r.sector||'')}" placeholder="Ej. Casa 4, baño, eje A-2">`)}
+  ${F('rpa','Partida / actividad',`<input name="partida" value="${esc(r.partida||'')}" placeholder="Ej. Hormigonado de radier">`)}
+  ${F('res','Especialidad',`<select name="especialidad">${opts(ESPECIALIDADES,r.especialidad)}</select>`)}
+  ${F('rcr','Gravedad / criticidad',`<select name="criticidad">${opts(CRITICIDADES,r.criticidad)}</select>`)}
+  ${F('rre','Responsable de resolver *',`<input name="responsable" required value="${esc(r.responsable||'')}" placeholder="Nombre del responsable">`)}
+  ${F('rfc','Fecha comprometida',`<input type="date" name="fechaCompromiso" value="${esc(r.fechaCompromiso||'')}">`)}
+  <div class="solution-form-block full"><div class="solution-form-title">2. ¿Qué ocurrió?</div><div class="muted small">Describa el hecho observado con palabras simples. Evite suposiciones; indique lo que realmente se vio o midió.</div></div>
+  ${F('rd','Descripción del hallazgo *',`<textarea name="descripcion" required placeholder="Qué se observó, en qué elemento, dónde y en qué condición…">${esc(r.descripcion||'')}</textarea>`,'full')}
+  ${F('robj','Evidencia / dato observado',`<textarea name="evidenciaObjetiva" placeholder="Medida, cantidad, fotografía, fecha, eje o referencia que permita comprobarlo…">${esc(r.evidenciaObjetiva||'')}</textarea>`,'full')}
+  ${F('rrq','Plano, EETT o requisito relacionado',`<textarea name="requisito" placeholder="Indique el plano, especificación o condición que debía cumplirse…">${esc(r.requisito||'')}</textarea>`,'full')}
+  <div class="solution-form-block full"><div class="solution-form-title">3. ¿Cómo se corregirá?</div><div class="muted small">Indique la medida inmediata y la solución propuesta. No ejecute una reparación que requiera autorización sin aprobación técnica.</div></div>
+  ${F('rac','Acción inmediata / qué se hará ahora',`<textarea name="accionCorrectiva" placeholder="Ej. Aislar el sector, detener la partida y avisar al supervisor…">${esc(r.accionCorrectiva||'')}</textarea>`,'full')}
+  ${F('rsp','Solución propuesta',`<textarea name="solucionPropuesta" placeholder="Describa cómo se dejará el elemento conforme…">${esc(r.solucionPropuesta||r.accionCorrectiva||'')}</textarea>`,'full')}
+  ${F('rpr','Cómo se realizará la reparación',`<textarea name="procedimientoSolucion" placeholder="Pasos principales, preparación, ejecución y control…">${esc(r.procedimientoSolucion||'')}</textarea>`,'full')}
+  ${F('rms','Materiales / recursos',`<input name="materialSolucion" value="${esc(r.materialSolucion||'')}" placeholder="Materiales y herramientas requeridas">`)}
+  ${F('rmp','Medida para evitar que vuelva a ocurrir'+(r.tipo==='NCR'?' *':''),`<textarea name="medidaPreventiva" placeholder="Qué control se incorporará para prevenir la repetición…">${esc(r.medidaPreventiva||r.accionPreventiva||'')}</textarea>`,'full')}
+  <details class="record-advanced full"><summary>Antecedentes técnicos y seguimiento (opcional)</summary><div class="form-grid">
+  ${F('rdetector','Detectado por',`<input name="nombreDetector" value="${esc(r.nombreDetector||'')}" placeholder="Nombre y apellido">`)}
+  ${F('rcargo','Cargo de quien informa',`<input name="cargoDetector" value="${esc(r.cargoDetector||'')}">`)}
+  ${F('rplano','Plano / revisión',`<input name="plano" value="${esc(r.plano||'')}" placeholder="Código y revisión">`)}
+  ${F('rel','Elemento constructivo',`<input name="elementoConstructivo" value="${esc(r.elementoConstructivo||r.partida||r.sector||'')}">`)}
+  ${F('rfam','Familia del problema',`<input name="familiaProblema" value="${esc(r.familiaProblema||'')}">`)}
+  ${F('rcc','Categoría de causa',`<select name="categoriaCausa">${opts(CAUSAS,r.categoriaCausa,'Sin definir')}</select>`)}
+  ${F('rcausa1','Causa raíz 1',`<input name="causalRaiz1" value="${esc(r.causalRaiz1||'')}">`)}
+  ${F('rcausa2','Causa raíz 2',`<input name="causalRaiz2" value="${esc(r.causalRaiz2||'')}">`)}
+  ${F('rci','Causa inmediata',`<textarea name="causaInmediata">${esc(r.causaInmediata||'')}</textarea>`)}
+  ${F('rcs','Causa sistémica',`<textarea name="causaSistemica">${esc(r.causaSistemica||'')}</textarea>`)}
+  ${F('rccn','Condiciones que contribuyeron',`<textarea name="condicionesContribuyentes">${esc(r.condicionesContribuyentes||'')}</textarea>`,'full')}
+  ${F('rtecnica','Corrección técnica',`<textarea name="correccionTecnica">${esc(r.correccionTecnica||'')}</textarea>`)}
+  ${F('rmano','Mano de obra',`<input name="manoObra" value="${esc(r.manoObra||'')}">`)}
+  ${F('requipo','Equipos',`<input name="equiposCorreccion" value="${esc(r.equiposCorreccion||'')}">`)}
+  ${F('rmaterial','Materiales',`<input name="materialesCorreccion" value="${esc(r.materialesCorreccion||'')}">`)}
+  ${F('rotros','Otros recursos / restricciones',`<input name="otrosRecursos" value="${esc(r.otrosRecursos||'')}">`)}
+  ${F('rautoriza','Autorización técnica',`<select name="autorizacionCorreccion">${opts(['Pendiente','Procede','No procede'],r.autorizacionCorreccion||'Pendiente')}</select>`)}
+  ${F('rap','Acción preventiva adicional',`<textarea name="accionPreventiva">${esc(r.accionPreventiva||'')}</textarea>`,'full')}
+  ${F('rman','Manual PRAXIS ACADEMY',`<select name="manualAcademyId">${academyManualOptions(r.manualAcademyId||'')}</select>`,'full')}
+  ${F('rmotdias','Motivo de extensión de plazo',`<select name="motivoAmpliacion">${opts(['Sin ampliación','NCR / no conformidad','DH / hallazgo técnico','Clima','Siniestro / accidente','Falta de material','Equipo fuera de servicio','Cambio de diseño / RDI','Interferencia de otra cuadrilla','Otro'],r.motivoAmpliacion||'Sin ampliación')}</select>`)}
+  ${F('rdias','Días adicionales solicitados',`<input type="number" min="0" step="1" name="diasAdicionales" value="${esc(r.diasAdicionales||0)}">`)}
+  ${F('rdiasnota','Tarea afectada y justificación',`<textarea name="detalleAmpliacion" placeholder="Tarea afectada, motivo y respaldo…">${esc(r.detalleAmpliacion||'')}</textarea>`,'full')}
+  ${F('rvalidias','Validación de extensión',`<select name="ampliacionValidada">${opts(['Pendiente de validación','Validada por supervisor','Rechazada'],r.ampliacionValidada||'Pendiente de validación')}</select>`)}
+  ${F('rco','Costo de no calidad ($)',`<input type="number" min="0" step="1" name="costoNoCalidad" value="${esc(r.costoNoCalidad||0)}">`)}
+  ${F('rhh','Horas improductivas',`<input type="number" min="0" step="0.5" name="horasNoCalidad" value="${esc(r.horasNoCalidad||0)}">`)}
+  </div></details>
+  </div><div class="modal-foot"><button type="button" class="btn btn-sec" data-act="close">Cancelar</button><button class="btn" type="submit">Guardar registro</button></div></form>`,true);
 }
 
 function rdiForm(){
