@@ -1301,6 +1301,15 @@ const FORMS = {
     DB.records.push(r); save(); closeModal(); toast(r.code + ' creado.', 'ok');
     location.hash = '#/registro/' + enc(r.uid);
   },
+  'quality-response'(fd,form){
+    const r=getRec(form.dataset.id); if(!r)return;
+    const g=k=>String(fd.get(k)||'').trim();
+    if(!g('fecha')||!g('responsable')||!g('accion'))return toast('Complete fecha, responsable e instrucción técnica.','err');
+    r.respuestasCalidad=Array.isArray(r.respuestasCalidad)?r.respuestasCalidad:[];
+    r.respuestasCalidad.push({id:uid(),fecha:g('fecha'),responsable:g('responsable'),cargo:g('cargo'),decision:g('decision'),accion:g('accion'),control:g('control'),observacion:g('observacion')});
+    r.timeline=r.timeline||[]; r.timeline.push({fecha:g('fecha'),estado:r.estado,actor:g('responsable'),nota:'Respuesta técnica de calidad registrada: '+g('decision')});
+    save();closeModal();toast('Respuesta técnica registrada.','ok');render();
+  },
   estado(fd, form) {
     if(CURRENT_ROLE==='Consulta') return toast('El perfil Consulta es de solo lectura.','err');
     const r = getRec(form.dataset.id); const e = fd.get('estado');
@@ -1601,6 +1610,7 @@ const ACTIONS = {
     DB.records = DB.records.filter(r => r.uid !== d.id); DB.evidences = DB.evidences.filter(e => e.recId !== d.id); DB.lessons = DB.lessons.filter(l => l.recId !== d.id);
     save(); toast('Registro eliminado.', 'ok'); location.hash = '#/dhncr';
   }); },
+  'quality-response-new': d => calidadRespuestaForm(d.id),
   'rec-reopen': d => { if(!roleCanClose()) return toast('El perfil actual no puede reabrir registros.','err'); confirmDlg('¿Reabrir este registro? Volverá a “En corrección”.', () => { const r = getRec(d.id); r.fechaCierre = ''; setEstado(r, 'En corrección', 'Registro reabierto'); save(); toast('Registro reabierto.', 'ok'); render(); }, 'Reabrir'); },
   'innov-new': d => { if(CURRENT_ROLE==='Consulta') return toast('El perfil Consulta es de solo lectura.','err'); innovForm(d.id); },
   'innov-edit': d => { if(CURRENT_ROLE==='Consulta') return toast('El perfil Consulta es de solo lectura.','err'); innovForm(d.id); },
