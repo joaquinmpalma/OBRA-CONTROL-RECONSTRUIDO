@@ -468,3 +468,9 @@ body.auth-locked .auth-screen{display:flex}
   .timeline{break-inside:avoid}
   @page{size:A4;margin:14mm}
 }
+
+.quality-response-card{border-left:4px solid var(--navy)}
+.quality-response-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:.75rem 0;background:#fbfcfe;break-inside:avoid}
+.quality-response-item .block{margin-top:.55rem}
+.record-form-intro{margin-bottom:14px}
+@media print{.quality-response-card,.quality-response-item{break-inside:avoid}.quality-response-card .page-head button{display:none!important}}
